@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-plus-jakarta), ui-sans-serif, system-ui, sans-serif;
+  
+  --color-primary: var(--primary);
+  --color-primary-container: var(--primary-container);
+  --color-on-primary: var(--on-primary);
+  --color-secondary: var(--secondary);
+  --color-secondary-container: var(--secondary-container);
+  --color-tertiary: var(--tertiary);
+  --color-tertiary-container: var(--tertiary-container);
+  
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
+  --color-border-color: var(--border-color);
+  
+  --radius-sm: 4px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  
+  --shadow-organic: 0 4px 20px -2px rgba(0, 110, 28, 0.06);
+  --shadow-organic-hover: 0 10px 25px -5px rgba(0, 110, 28, 0.12);
+  --shadow-accent: 0 4px 20px -2px rgba(139, 80, 0, 0.08);
+}
+
+:root {
+  --primary: #006e1c;
+  --primary-container: #4caf50;
+  --on-primary: #ffffff;
+  --secondary: #5e5f56;
+  --secondary-container: #e4e3d7;
+  --tertiary: #8b5000;
+  --tertiary-container: #e18500;
+  
+  --background: #f8faf5;
+  --foreground: #191c1a;
+  --surface: #ffffff;
+  --surface-hover: #f1f3ee;
+  --border-color: #becab9;
+}
+
+.dark {
+  --primary: #78dc77;
+  --primary-container: #005313;
+  --on-primary: #002204;
+  --secondary: #c7c7bc;
+  --secondary-container: #46473f;
+  --tertiary: #ffb870;
+  --tertiary-container: #8b5000;
+  
+  --background: #0f120f;
+  --foreground: #e1e3de;
+  --surface: #181c18;
+  --surface-hover: #222622;
+  --border-color: #3f4a3c;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Glassmorphism Navigation */
+.glass-header {
+  backdrop-filter: blur(12px);
+  background: rgba(248, 250, 245, 0.8);
+  border-bottom: 1px solid rgba(111, 122, 107, 0.1);
+}
+
+.dark .glass-header {
+  background: rgba(15, 18, 15, 0.8);
+  border-bottom: 1px solid rgba(63, 74, 60, 0.2);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* Smooth zoom transition */
+.image-zoom-hover {
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.image-zoom-hover:hover {
+  transform: scale(1.06);
+}
