@@ -808,8 +808,18 @@ export async function createOrder(data: any): Promise<string> {
 
   try {
     await adminDb.runTransaction(async (transaction) => {
-      // 1. Fetch all product documents first (Reads)
-      const productLookups = data.items.map((item: any) => {
+      // 1. Fetch all product documents first (Reads) - skip freebies
+      const nonFreebieItems = data.items.filter((item: any) => {
+        const isFree = item.isFreebie || 
+                       item.product?.isFreebie || 
+                       String(item.product?.id) === "freebie-dhaniya-mirch" || 
+                       item.product?.price === 0 ||
+                       item.product?.name?.toLowerCase().includes("dhaniya") ||
+                       item.product?.name?.toLowerCase().includes("pudina");
+        return !isFree;
+      });
+
+      const productLookups = nonFreebieItems.map((item: any) => {
         const productId = String(item.product.id);
         const productRef = adminDb.collection("products").doc(productId);
         return {

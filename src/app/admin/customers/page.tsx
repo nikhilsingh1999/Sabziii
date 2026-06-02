@@ -13,6 +13,9 @@ import {
   Award
 } from "lucide-react";
 
+import { useAdminStore } from "@/store/useAdminStore";
+import { TableSkeleton } from "@/components/Skeletons";
+
 interface Customer {
   userId: string;
   name: string;
@@ -26,8 +29,9 @@ type SortField = "name" | "totalOrders" | "totalSpending";
 type SortOrder = "asc" | "desc";
 
 export default function CustomersPage() {
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [loading, setLoading] = useState(true);
+  const adminStore = useAdminStore();
+  const loading = adminStore.loadingCustomers;
+  const customers = adminStore.customers;
   const [error, setError] = useState<string | null>(null);
 
   // Search & Sorting
@@ -35,29 +39,16 @@ export default function CustomersPage() {
   const [sortField, setSortField] = useState<SortField>("totalSpending");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
 
-  const fetchCustomers = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const res = await fetch("/api/admin/analytics?type=customers");
-      const data = await res.json();
-      
-      if (res.ok && data.success) {
-        setCustomers(data.customers || []);
-      } else {
-        throw new Error(data.error || "Failed to retrieve customers catalog");
-      }
-    } catch (err: any) {
-      console.error(err);
-      setError(err.message || "Failed to communicate with analytics backend.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchCustomers();
+    const load = async () => {
+      try {
+        setError(null);
+        await adminStore.fetchCustomers();
+      } catch (err: any) {
+        setError(err.message || "Failed to load customers.");
+      }
+    };
+    load();
   }, []);
 
   // Sort toggle handler
@@ -100,6 +91,10 @@ export default function CustomersPage() {
   const topSpender = processedCustomers.length > 0 
     ? [...processedCustomers].sort((a, b) => b.totalSpending - a.totalSpending)[0]
     : null;
+
+  if (loading && customers.length === 0) {
+    return <TableSkeleton rows={5} cols={5} />;
+  }
 
   return (
     <div className="space-y-6 sm:space-y-8 animate-fade-in text-left">

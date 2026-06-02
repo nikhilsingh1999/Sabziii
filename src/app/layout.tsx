@@ -26,15 +26,23 @@ export const viewport: Viewport = {
   initialScale: 1.0,
 };
 
-export default function RootLayout({
+import { getInitialStoreData } from "@/lib/server-fetch";
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const initialData = await getInitialStoreData();
+
   return (
     <html lang="en" className={`${plusJakarta.variable}`}>
       <body className="bg-background text-foreground antialiased min-h-screen flex flex-col transition-colors duration-300">
-        <AppProvider>
+        <AppProvider
+          initialProducts={initialData.products}
+          initialCategories={initialData.categories}
+          initialBanners={initialData.banners}
+        >
           <GoogleAnalytics />
           <ClientLayoutWrapper>
             {children}

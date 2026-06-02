@@ -85,15 +85,29 @@ const MOCK_BLOGS: BlogArticle[] = [
   }
 ];
 
-export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AppProvider: React.FC<{
+  children: React.ReactNode;
+  initialProducts?: Product[];
+  initialCategories?: any[];
+  initialBanners?: any[];
+}> = ({ children, initialProducts = [], initialCategories = [], initialBanners = [] }) => {
   const store = useStore();
+
+  // Seed store instantly on render if currently empty to enable immediate SSR
+  if (store.products.length === 0 && initialProducts.length > 0) {
+    useStore.setState({
+      products: initialProducts,
+      categories: initialCategories,
+      banners: initialBanners
+    });
+  }
 
   // Mount listeners and fetch initial catalog from Firestore on client load
   useEffect(() => {
     // 1. Sync User Auth Credentials
     const unsubscribe = store.initAuthListener();
     
-    // 2. Load Products, Categories, and Banners from DB
+    // 2. Load Products, Categories, and Banners from DB (background refresh)
     store.fetchStoreData();
     
     return () => unsubscribe();

@@ -16,6 +16,9 @@ import {
   Filter
 } from "lucide-react";
 
+import { useAdminStore } from "@/store/useAdminStore";
+import { TableSkeleton } from "@/components/Skeletons";
+
 interface Product {
   id: string;
   name: string;
@@ -43,9 +46,11 @@ interface StockHistoryRecord {
 }
 
 export default function InventoryPage() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const adminStore = useAdminStore();
+  const products = adminStore.products;
+  const loadingProducts = adminStore.loadingProducts;
+  
   const [history, setHistory] = useState<StockHistoryRecord[]>([]);
-  const [loadingProducts, setLoadingProducts] = useState(true);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -66,22 +71,13 @@ export default function InventoryPage() {
   const [stockFilter, setStockFilter] = useState<"all" | "in" | "low" | "out">("all");
 
   // Fetch initial products data
-  const fetchProducts = async () => {
+  const loadProducts = async (force = false) => {
     try {
-      setLoadingProducts(true);
       setError(null);
-      const res = await fetch("/api/products");
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setProducts(data.products || []);
-      } else {
-        throw new Error(data.error || "Failed to load products");
-      }
+      await adminStore.fetchProducts(force);
     } catch (err: any) {
       console.error(err);
       setError(err.message || "Failed to retrieve stock list.");
-    } finally {
-      setLoadingProducts(false);
     }
   };
 
@@ -106,7 +102,7 @@ export default function InventoryPage() {
   };
 
   useEffect(() => {
-    fetchProducts();
+    loadProducts();
   }, []);
 
   // Fetch log history when switching tabs
@@ -115,7 +111,7 @@ export default function InventoryPage() {
     if (tab === "history") {
       fetchHistory();
     } else {
-      fetchProducts();
+      loadProducts();
     }
   };
 
@@ -160,7 +156,9 @@ export default function InventoryPage() {
       if (response.ok && data.success) {
         setSuccess(`Successfully adjusted stock for ${selectedProduct.name}!`);
         setIsAdjustModalOpen(false);
-        fetchProducts(); // refresh products list
+        adminStore.invalidateProducts();
+        adminStore.invalidateStats();
+        loadProducts(true); // refresh products list
       } else {
         setError(data.error || "Failed to save stock adjustment.");
       }
@@ -289,8 +287,11 @@ export default function InventoryPage() {
 
           {/* Current Stock Levels List */}
           <section className="bg-white border border-slate-200/80 rounded-xl p-5 shadow-sm overflow-hidden">
-            <div className="overflow-x-auto border border-slate-100 rounded-lg">
-              <table className="w-full border-collapse text-left text-xs">
+            {loadingProducts && products.length === 0 ? (
+              <TableSkeleton rows={5} cols={5} />
+            ) : (
+              <div className="overflow-x-auto border border-slate-100 rounded-lg">
+                <table className="w-full border-collapse text-left text-xs">
                 <thead className="bg-slate-50 text-slate-500 font-bold uppercase border-b border-slate-100">
                   <tr>
                     <th className="px-5 py-3.5">Product Name</th>
@@ -354,6 +355,7 @@ export default function InventoryPage() {
                 </tbody>
               </table>
             </div>
+            )}
           </section>
         </>
       )}
@@ -374,9 +376,12 @@ export default function InventoryPage() {
             </button>
           </div>
 
-          <div className="overflow-x-auto border border-slate-100 rounded-lg">
-            <table className="w-full border-collapse text-left text-xs">
-              <thead className="bg-slate-50 text-slate-500 font-bold uppercase border-b border-slate-100">
+          {loadingHistory && history.length === 0 ? (
+            <TableSkeleton rows={5} cols={5} />
+          ) : (
+            <div className="overflow-x-auto border border-slate-100 rounded-lg">
+              <table className="w-full border-collapse text-left text-xs">
+                <thead className="bg-slate-50 text-slate-500 font-bold uppercase border-b border-slate-100">
                 <tr>
                   <th className="px-5 py-3.5">Timestamp</th>
                   <th className="px-5 py-3.5">Product Name</th>
@@ -426,9 +431,10 @@ export default function InventoryPage() {
                     </td>
                   </tr>
                 )}
-              </tbody>
+                </tbody>
             </table>
           </div>
+          )}
         </section>
       )}
 

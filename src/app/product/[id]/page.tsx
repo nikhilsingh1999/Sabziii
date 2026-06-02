@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useApp } from "@/context/AppContext";
 import { ProductCard } from "@/components/ProductCard";
 import { trackEvent } from "@/lib/analytics";
+import { ProductDetailsSkeleton } from "@/components/Skeletons";
 import { 
   ArrowLeft, 
   Heart, 
@@ -42,6 +43,15 @@ export default function ProductDetail({ params }: PageProps) {
       });
     }
   }, [product]);
+
+  // Show skeleton if products catalog is empty (loading state)
+  if (products.length === 0) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <ProductDetailsSkeleton />
+      </div>
+    );
+  }
 
   if (!product) {
     return (

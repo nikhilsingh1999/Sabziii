@@ -23,6 +23,9 @@ import {
   ResponsiveContainer 
 } from "recharts";
 
+import { useAdminStore } from "@/store/useAdminStore";
+import { DashboardCardSkeleton } from "@/components/Skeletons";
+
 interface Stats {
   totalOrders: number;
   totalRevenue: number;
@@ -45,35 +48,30 @@ interface ChartData {
 }
 
 export default function Dashboard() {
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [chartData, setChartData] = useState<ChartData[]>([]);
+  const adminStore = useAdminStore();
+  const loading = adminStore.loadingStats;
+  const stats = adminStore.stats as Stats | null;
+  const chartData = (stats as any)?.revenueTrend || [];
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        const response = await fetch("/api/admin/analytics");
-        const data = await response.json();
-        
-        if (response.ok && data.success) {
-          setStats(data.stats);
-          setChartData(data.report?.revenueTrend || []);
-        }
-      } catch (error) {
-        console.error("Error fetching dashboard data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDashboardData();
+    adminStore.fetchStats();
   }, []);
 
-  if (loading) {
+  if (loading && !stats) {
     return (
-      <div className="h-96 flex flex-col items-center justify-center gap-3">
-        <Loader2 className="w-8 h-8 text-primary animate-spin" />
-        <p className="text-secondary text-sm font-semibold">Loading dashboard overview...</p>
+      <div className="space-y-6 sm:space-y-8 animate-fade-in text-left">
+        {/* Stat Cards Grid */}
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {[...Array(6)].map((_, i) => (
+            <DashboardCardSkeleton key={i} />
+          ))}
+        </section>
+
+        {/* Graph & Sales Overview Skeleton */}
+        <section className="grid lg:grid-cols-3 gap-6">
+          <div className="bg-white border border-slate-200/80 rounded-xl p-5 shadow-sm lg:col-span-2 h-[350px] animate-pulse bg-slate-50" />
+          <div className="bg-white border border-slate-200/80 rounded-xl p-5 shadow-sm h-[350px] animate-pulse bg-slate-50" />
+        </section>
       </div>
     );
   }

@@ -18,6 +18,9 @@ import {
   Image as LucideImage
 } from "lucide-react";
 
+import { useAdminStore } from "@/store/useAdminStore";
+import { TableSkeleton } from "@/components/Skeletons";
+
 interface Banner {
   id: string;
   title: string;
@@ -37,8 +40,9 @@ const bannerSchema = z.object({
 type BannerFormValues = z.infer<typeof bannerSchema>;
 
 export default function BannersPage() {
-  const [banners, setBanners] = useState<Banner[]>([]);
-  const [loading, setLoading] = useState(true);
+  const adminStore = useAdminStore();
+  const loading = adminStore.loadingBanners;
+  const banners = adminStore.banners;
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -64,27 +68,18 @@ export default function BannersPage() {
 
   const watchImageUrl = watch("imageUrl");
 
-  const fetchBanners = async () => {
+  const loadBanners = async (force = false) => {
     try {
-      setLoading(true);
       setError(null);
-      const res = await fetch("/api/banners");
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setBanners(data.banners || []);
-      } else {
-        throw new Error(data.error || "Failed to load banners");
-      }
+      await adminStore.fetchBanners(force);
     } catch (err: any) {
       console.error(err);
       setError(err.message || "Failed to retrieve banner catalog.");
-    } finally {
-      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchBanners();
+    loadBanners();
   }, []);
 
   const handleEditClick = (banner: Banner) => {
@@ -130,7 +125,8 @@ export default function BannersPage() {
       if (response.ok && data.success) {
         setSuccess(editingBanner ? "Banner updated successfully!" : "Banner created successfully!");
         handleCancelEdit();
-        fetchBanners();
+        adminStore.invalidateBanners();
+        loadBanners(true);
       } else {
         setError(data.error || "Failed to save banner details.");
       }
@@ -157,7 +153,8 @@ export default function BannersPage() {
 
       if (response.ok && data.success) {
         setSuccess("Banner deleted successfully!");
-        fetchBanners();
+        adminStore.invalidateBanners();
+        loadBanners(true);
       } else {
         setError(data.error || "Failed to delete banner.");
       }
@@ -345,9 +342,12 @@ export default function BannersPage() {
           </div>
 
           {/* Table list */}
-          <div className="overflow-x-auto border border-slate-100 rounded-lg">
-            <table className="w-full border-collapse text-left text-xs">
-              <thead className="bg-slate-50 text-slate-500 font-bold uppercase border-b border-slate-100">
+          {loading && banners.length === 0 ? (
+            <TableSkeleton rows={4} cols={5} />
+          ) : (
+            <div className="overflow-x-auto border border-slate-100 rounded-lg">
+              <table className="w-full border-collapse text-left text-xs">
+                <thead className="bg-slate-50 text-slate-500 font-bold uppercase border-b border-slate-100">
                 <tr>
                   <th className="px-5 py-3.5">Slide Image Preview</th>
                   <th className="px-5 py-3.5">Title</th>
@@ -431,6 +431,7 @@ export default function BannersPage() {
               </tbody>
             </table>
           </div>
+          )}
         </section>
 
       </div>

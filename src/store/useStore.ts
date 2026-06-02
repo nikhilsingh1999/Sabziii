@@ -56,6 +56,7 @@ export interface Product {
   emoji: string;
   image: string;
   active: boolean;
+  isFreebie?: boolean;
 }
 
 export interface Category {
@@ -190,7 +191,8 @@ const FREEBIE_ITEM: CartItem = {
     textColor: "text-emerald-800 dark:text-emerald-300",
     emoji: "🌿",
     image: "/images/products/spinach.png",
-    active: true
+    active: true,
+    isFreebie: true
   },
   quantity: 1
 };
@@ -614,9 +616,11 @@ export const useStore = create<StoreState>()(
               name: item.product.name,
               price: item.product.price,
               unit: item.product.unit,
-              image: item.product.image
+              image: item.product.image,
+              isFreebie: item.product.isFreebie || false
             },
-            quantity: item.quantity
+            quantity: item.quantity,
+            isFreebie: item.product.isFreebie || false
           })),
           subtotal,
           deliveryCharge: delivery,

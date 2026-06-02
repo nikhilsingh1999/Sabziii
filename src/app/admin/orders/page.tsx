@@ -19,6 +19,8 @@ import {
   ShieldAlert,
   ArrowRight
 } from "lucide-react";
+import { useAdminStore } from "@/store/useAdminStore";
+import { TableSkeleton } from "@/components/Skeletons";
 
 // Order Interface matching backend
 interface OrderItem {
@@ -28,8 +30,10 @@ interface OrderItem {
     price: number;
     unit: string;
     image?: string;
+    isFreebie?: boolean;
   };
   quantity: number;
+  isFreebie?: boolean;
 }
 
 interface Order {
@@ -62,8 +66,9 @@ const statusOptions = [
 ];
 
 export default function OrdersPage() {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
+  const adminStore = useAdminStore();
+  const orders = adminStore.orders;
+  const loading = adminStore.loadingOrders;
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -75,27 +80,18 @@ export default function OrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState(false);
 
-  const fetchOrders = async () => {
+  const loadOrders = async (force = false) => {
     try {
-      setLoading(true);
       setError(null);
-      const res = await fetch("/api/orders");
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setOrders(data.orders || []);
-      } else {
-        throw new Error(data.error || "Failed to load orders list");
-      }
+      await adminStore.fetchOrders(force);
     } catch (err: any) {
       console.error(err);
       setError(err.message || "Failed to retrieve order records.");
-    } finally {
-      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchOrders();
+    loadOrders();
   }, []);
 
   // Update Status handler
@@ -123,19 +119,9 @@ export default function OrdersPage() {
 
       if (response.ok && data.success) {
         setSuccess(`Order ${orderId} updated to ${nextStatus}!`);
-        
-        // Update local items state
-        setOrders((prev) => 
-          prev.map((o) => 
-            o.orderId === orderId 
-              ? { 
-                  ...o, 
-                  orderStatus: nextStatus, 
-                  paymentStatus: payload.paymentStatus || o.paymentStatus 
-                } 
-              : o
-          )
-        );
+        adminStore.invalidateOrders();
+        adminStore.invalidateStats();
+        loadOrders(true);
 
         // Update selected order view details
         if (selectedOrder && selectedOrder.orderId === orderId) {
@@ -265,8 +251,11 @@ export default function OrdersPage() {
 
       {/* Orders Data Table */}
       <section className="bg-white border border-slate-200/80 rounded-xl p-5 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto border border-slate-100 rounded-lg">
-          <table className="w-full border-collapse text-left text-xs">
+        {loading && orders.length === 0 ? (
+          <TableSkeleton rows={5} cols={7} />
+        ) : (
+          <div className="overflow-x-auto border border-slate-100 rounded-lg">
+            <table className="w-full border-collapse text-left text-xs">
             <thead className="bg-slate-50 text-slate-500 font-bold uppercase border-b border-slate-100">
               <tr>
                 <th className="px-5 py-3.5">Order ID</th>
@@ -341,8 +330,9 @@ export default function OrdersPage() {
                 </tr>
               )}
             </tbody>
-          </table>
-        </div>
+            </table>
+          </div>
+        )}
       </section>
 
       {/* Order Details Slide-over Drawer Modal */}
@@ -394,20 +384,32 @@ export default function OrdersPage() {
               <div className="space-y-3">
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Items Purchased</span>
                 <div className="divide-y divide-slate-100 border border-slate-100 rounded-xl overflow-hidden bg-white">
-                  {selectedOrder.items?.map((item, idx) => (
-                    <div key={idx} className="flex justify-between items-center p-3 text-xs">
-                      <div>
-                        <h4 className="font-bold text-slate-700">{item.product.name}</h4>
-                        <p className="text-[10px] text-slate-400 font-medium">
-                          ₹{item.product.price} / {item.product.unit}
-                        </p>
+                  {selectedOrder.items?.map((item, idx) => {
+                    const isFreebie = item.isFreebie || item.product?.isFreebie || String(item.product?.id) === "freebie-dhaniya-mirch" || item.product?.price === 0;
+                    return (
+                      <div key={idx} className="flex justify-between items-center p-3 text-xs">
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <h4 className="font-bold text-slate-700">{item.product.name}</h4>
+                            {isFreebie && (
+                              <span className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 px-1.5 py-0.5 rounded text-[8px] font-bold">
+                                FREE
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[10px] text-slate-400 font-medium">
+                            {isFreebie ? "Complimentary Item" : `₹${item.product.price} / ${item.product.unit}`}
+                          </p>
+                        </div>
+                        <div className="text-right font-mono font-bold text-slate-600">
+                          <span>{item.quantity} × </span>
+                          <span className={isFreebie ? "text-emerald-600 font-bold" : "text-slate-800"}>
+                            {isFreebie ? "FREE" : `₹${item.product.price * item.quantity}`}
+                          </span>
+                        </div>
                       </div>
-                      <div className="text-right font-mono font-bold text-slate-600">
-                        <span>{item.quantity} × </span>
-                        <span className="text-slate-800">₹{item.product.price * item.quantity}</span>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 

@@ -152,9 +152,23 @@ export default function Checkout() {
                         className="object-contain p-0.5"
                       />
                     </span>
-                    <span>{item.product.name} <b className="text-foreground text-xs">x{item.quantity}</b></span>
+                    <span>
+                      {item.product.name}
+                      {(item.product.price === 0 || item.product.isFreebie) && (
+                        <span className="ml-1.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded text-[9px] font-bold border border-emerald-500/10">
+                          FREE
+                        </span>
+                      )}
+                      <b className="text-foreground text-xs ml-1">x{item.quantity}</b>
+                    </span>
                   </span>
-                  <span className="font-semibold text-foreground">₹{item.product.price * item.quantity}</span>
+                  <span className="font-semibold text-foreground">
+                    {item.product.price === 0 || item.product.isFreebie ? (
+                      <span className="text-emerald-600 font-bold">FREE</span>
+                    ) : (
+                      `₹${item.product.price * item.quantity}`
+                    )}
+                  </span>
                 </div>
               ))}
             </div>

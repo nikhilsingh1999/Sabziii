@@ -4,19 +4,23 @@ import React, { useEffect, useState } from "react";
 import { 
   FileSpreadsheet, 
   Search, 
-  Loader2, 
   AlertCircle, 
   Download, 
   ArrowUpDown
 } from "lucide-react";
+import { useAdminStore } from "@/store/useAdminStore";
+import { TableSkeleton } from "@/components/Skeletons";
 
 interface OrderItem {
   product: {
     id: number | string;
     name: string;
+    price?: number;
     unit?: string;
+    isFreebie?: boolean;
   };
   quantity: number;
+  isFreebie?: boolean;
 }
 
 interface Order {
@@ -32,8 +36,9 @@ interface ProcurementItem {
 }
 
 export default function ProcurementReportPage() {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
+  const adminStore = useAdminStore();
+  const loading = adminStore.loadingOrders;
+  const orders = adminStore.orders;
   const [error, setError] = useState<string | null>(null);
   
   // Search & Sorting state
@@ -44,30 +49,21 @@ export default function ProcurementReportPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setLoading(true);
         setError(null);
-
-        const orderRes = await fetch("/api/orders");
-        const orderData = await orderRes.json();
-
-        if (orderRes.ok && orderData.success) {
-          setOrders(orderData.orders || []);
-        } else {
-          throw new Error("Failed to load report data from database.");
-        }
+        await adminStore.fetchOrders();
       } catch (err: any) {
         console.error(err);
         setError(err.message || "Failed to load procurement report.");
-      } finally {
-        setLoading(false);
       }
     };
 
     fetchData();
   }, []);
 
-  // Process data to aggregate quantities from non-cancelled orders
-  const activeOrders = orders.filter((o) => o.orderStatus !== "Cancelled");
+  // Filter orders: Include ONLY Pending, Confirmed, Packed, Out for Delivery
+  // Exclude: Delivered, Cancelled
+  const activeStatuses = ["Pending", "Confirmed", "Packed", "Out For Delivery"];
+  const activeOrders = orders.filter((o) => activeStatuses.includes(o.orderStatus));
   
   const productTotals: { [key: string]: ProcurementItem } = {};
 
@@ -75,9 +71,22 @@ export default function ProcurementReportPage() {
     if (order.items && Array.isArray(order.items)) {
       order.items.forEach((item) => {
         if (!item.product || !item.product.name) return;
+        
         const name = item.product.name;
         const quantity = Number(item.quantity || 0);
         const unit = item.product.unit || "kg";
+
+        // Exclude freebies (Dhaniya, Pudina, isFreebie=true, price=0)
+        const isFreebie = item.isFreebie || 
+                          item.product.isFreebie || 
+                          String(item.product.id) === "freebie-dhaniya-mirch" ||
+                          item.product.price === 0 ||
+                          name.toLowerCase().includes("dhaniya") || 
+                          name.toLowerCase().includes("pudina") ||
+                          name.toLowerCase().includes("complimentary") ||
+                          name.toLowerCase().includes("free");
+
+        if (isFreebie) return;
 
         if (productTotals[name]) {
           productTotals[name].quantity += quantity;
@@ -107,11 +116,11 @@ export default function ProcurementReportPage() {
       return sortAsc ? comparison : -comparison;
     });
 
-  // Export report to CSV helper
+  // Export report to CSV
   const handleDownloadCSV = () => {
     if (filteredData.length === 0) return;
 
-    const headers = ["Product Name", "Total Quantity"];
+    const headers = ["Product Name", "Total Required Quantity"];
     const csvRows = filteredData.map((item) => [
       item.name,
       `${item.quantity} ${item.unit}`
@@ -124,6 +133,65 @@ export default function ProcurementReportPage() {
     const link = document.createElement("a");
     link.setAttribute("href", url);
     link.setAttribute("download", `procurement_report_${new Date().toISOString().split("T")[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Export report to Excel
+  const handleDownloadExcel = () => {
+    if (filteredData.length === 0) return;
+
+    const excelContent = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <!--[if gte mso 9]>
+        <xml>
+          <x:ExcelWorkbook>
+            <x:ExcelWorksheets>
+              <x:ExcelWorksheet>
+                <x:Name>Procurement Report</x:Name>
+                <x:WorksheetOptions>
+                  <x:DisplayGridlines/>
+                </x:WorksheetOptions>
+              </x:ExcelWorksheet>
+            </x:ExcelWorksheets>
+          </x:ExcelWorkbook>
+        </xml>
+        <![endif]-->
+        <style>
+          th { background-color: #f1f5f9; font-weight: bold; text-align: left; }
+          td, th { border: 1px solid #e2e8f0; padding: 8px; font-family: sans-serif; }
+        </style>
+      </head>
+      <body>
+        <h2>Procurement Required Quantities Report</h2>
+        <p>Generated on: ${new Date().toLocaleString("en-IN")}</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Product Name</th>
+              <th>Total Required Quantity</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filteredData.map(item => `
+              <tr>
+                <td>${item.name}</td>
+                <td>${item.quantity} ${item.unit}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob([excelContent], { type: "application/vnd.ms-excel;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `procurement_report_${new Date().toISOString().split("T")[0]}.xls`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -157,18 +225,29 @@ export default function ProcurementReportPage() {
           </div>
           <div>
             <h3 className="font-sans font-extrabold text-base text-slate-800">Procurement Report</h3>
-            <p className="text-slate-400 text-xs font-medium">Cumulative quantity of each product across all active orders</p>
+            <p className="text-slate-400 text-xs font-medium">Cumulative quantity of each product across all active (non-delivered) orders</p>
           </div>
         </div>
 
-        <button
-          onClick={handleDownloadCSV}
-          disabled={loading || filteredData.length === 0}
-          className="px-4 py-2 bg-primary hover:bg-primary-container text-white text-xs font-bold rounded-full flex items-center gap-2 shadow-sm transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Download className="w-3.5 h-3.5" />
-          <span>Download CSV Report</span>
-        </button>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <button
+            onClick={handleDownloadCSV}
+            disabled={loading || filteredData.length === 0}
+            className="flex-1 sm:flex-none px-4 py-2 bg-primary hover:bg-primary-container text-white text-xs font-bold rounded-full flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>CSV</span>
+          </button>
+          
+          <button
+            onClick={handleDownloadExcel}
+            disabled={loading || filteredData.length === 0}
+            className="flex-1 sm:flex-none px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-full flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Excel</span>
+          </button>
+        </div>
       </section>
 
       {/* Search Bar */}
@@ -187,53 +266,48 @@ export default function ProcurementReportPage() {
 
       {/* Report Table Card */}
       <section className="bg-white border border-slate-200/80 rounded-xl p-5 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto border border-slate-100 rounded-lg">
-          <table className="w-full border-collapse text-left text-xs">
-            <thead className="bg-slate-50 text-slate-500 font-bold uppercase border-b border-slate-100 select-none">
-              <tr>
-                <th className="px-5 py-3.5 cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort("name")}>
-                  <div className="flex items-center gap-1.5">
-                    <span>Product Name</span>
-                    <ArrowUpDown className="w-3.5 h-3.5" />
-                  </div>
-                </th>
-                <th className="px-5 py-3.5 cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort("quantity")}>
-                  <div className="flex items-center gap-1.5">
-                    <span>Total Quantity</span>
-                    <ArrowUpDown className="w-3.5 h-3.5" />
-                  </div>
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {loading ? (
+        {loading && orders.length === 0 ? (
+          <TableSkeleton rows={5} cols={2} />
+        ) : (
+          <div className="overflow-x-auto border border-slate-100 rounded-lg">
+            <table className="w-full border-collapse text-left text-xs">
+              <thead className="bg-slate-50 text-slate-500 font-bold uppercase border-b border-slate-100 select-none">
                 <tr>
-                  <td colSpan={2} className="px-5 py-12 text-center text-slate-400">
-                    <div className="flex items-center justify-center gap-2">
-                      <Loader2 className="w-5 h-5 text-primary animate-spin" />
-                      <span>Generating report...</span>
+                  <th className="px-5 py-3.5 cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort("name")}>
+                    <div className="flex items-center gap-1.5">
+                      <span>Product Name</span>
+                      <ArrowUpDown className="w-3.5 h-3.5" />
                     </div>
-                  </td>
+                  </th>
+                  <th className="px-5 py-3.5 cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort("quantity")}>
+                    <div className="flex items-center gap-1.5">
+                      <span>Total Required Quantity</span>
+                      <ArrowUpDown className="w-3.5 h-3.5" />
+                    </div>
+                  </th>
                 </tr>
-              ) : filteredData.length > 0 ? (
-                filteredData.map((item) => (
-                  <tr key={item.name} className="hover:bg-slate-50/40 transition-colors">
-                    <td className="px-5 py-4 font-sans font-bold text-slate-700">{item.name}</td>
-                    <td className="px-5 py-4 font-mono font-bold text-slate-600 text-sm">
-                      {item.quantity} <span className="text-[10px] text-slate-400 font-sans font-normal">{item.unit}</span>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredData.length > 0 ? (
+                  filteredData.map((item) => (
+                    <tr key={item.name} className="hover:bg-slate-50/40 transition-colors">
+                      <td className="px-5 py-4 font-sans font-bold text-slate-700">{item.name}</td>
+                      <td className="px-5 py-4 font-mono font-bold text-slate-600 text-sm">
+                        {item.quantity} <span className="text-[10px] text-slate-400 font-sans font-normal">{item.unit}</span>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={2} className="px-5 py-12 text-center text-slate-400">
+                      No active orders found to compile.
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={2} className="px-5 py-12 text-center text-slate-400">
-                    No active orders found to compile.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
       
     </div>

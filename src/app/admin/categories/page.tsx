@@ -12,6 +12,8 @@ import {
   X,
   CheckCircle2
 } from "lucide-react";
+import { useAdminStore } from "@/store/useAdminStore";
+import { TableSkeleton } from "@/components/Skeletons";
 
 interface Category {
   id: string;
@@ -26,6 +28,7 @@ export default function Categories() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const adminStore = useAdminStore();
 
   // Form states
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -38,25 +41,20 @@ export default function Categories() {
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState("");
 
-  const fetchCategories = async () => {
+  const loadCategories = async (force = false) => {
     try {
       setError(null);
-      const response = await fetch("/api/categories");
-      const data = await response.json();
-      if (response.ok && data.success) {
-        setCategories(data.categories || []);
-      } else {
-        setError(data.error || "Failed to load categories.");
-      }
+      const data = await adminStore.fetchCategories(force);
+      setCategories(data);
     } catch (err: any) {
-      setError("Failed to communicate with categories API.");
+      setError(err.message || "Failed to load categories.");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchCategories();
+    loadCategories();
   }, []);
 
   // Auto-generate slug from name
@@ -120,7 +118,8 @@ export default function Categories() {
       if (response.ok && data.success) {
         setSuccess(editingId ? "Category updated successfully!" : "Category created successfully!");
         handleCancelEdit();
-        fetchCategories();
+        adminStore.invalidateCategories();
+        loadCategories(true);
       } else {
         setError(data.error || "Failed to save category.");
       }
@@ -146,7 +145,8 @@ export default function Categories() {
 
       if (response.ok && data.success) {
         setSuccess("Category deleted successfully!");
-        fetchCategories();
+        adminStore.invalidateCategories();
+        loadCategories(true);
       } else {
         setError(data.error || "Failed to delete category.");
       }
@@ -306,70 +306,65 @@ export default function Categories() {
           </div>
 
           {/* Table */}
-          <div className="overflow-x-auto border border-slate-100 rounded-lg">
-            <table className="w-full border-collapse text-left text-xs">
-              <thead className="bg-slate-50 text-slate-500 font-bold uppercase border-b border-slate-100">
-                <tr>
-                  <th className="px-5 py-3.5">Category Name</th>
-                  <th className="px-5 py-3.5">Description</th>
-                  <th className="px-5 py-3.5">Slug</th>
-                  <th className="px-5 py-3.5">Status</th>
-                  <th className="px-5 py-3.5 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {loading ? (
+          {loading ? (
+            <TableSkeleton rows={6} cols={5} />
+          ) : (
+            <div className="overflow-x-auto border border-slate-100 rounded-lg">
+              <table className="w-full border-collapse text-left text-xs">
+                <thead className="bg-slate-50 text-slate-500 font-bold uppercase border-b border-slate-100">
                   <tr>
-                    <td colSpan={5} className="px-5 py-10 text-center text-slate-400">
-                      <div className="flex items-center justify-center gap-2">
-                        <Loader2 className="w-4.5 h-4.5 text-primary animate-spin" />
-                        <span>Loading category records...</span>
-                      </div>
-                    </td>
+                    <th className="px-5 py-3.5">Category Name</th>
+                    <th className="px-5 py-3.5">Description</th>
+                    <th className="px-5 py-3.5">Slug</th>
+                    <th className="px-5 py-3.5">Status</th>
+                    <th className="px-5 py-3.5 text-right">Actions</th>
                   </tr>
-                ) : filteredCategories.length > 0 ? (
-                  filteredCategories.map((cat) => (
-                    <tr key={cat.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="px-5 py-4 font-sans font-bold text-slate-700">{cat.name}</td>
-                      <td className="px-5 py-4 text-slate-500 max-w-[200px] truncate">{cat.description || "-"}</td>
-                      <td className="px-5 py-4 text-slate-500 font-mono text-[11px]">{cat.slug}</td>
-                      <td className="px-5 py-4">
-                        <span className={`px-2 py-0.5 rounded-full border text-[9px] font-bold ${
-                          cat.active 
-                            ? "bg-emerald-50 text-emerald-600 border-emerald-100" 
-                            : "bg-slate-50 text-slate-500 border-slate-100"
-                        }`}>
-                          {cat.active ? "Active" : "Inactive"}
-                        </span>
-                      </td>
-                      <td className="px-5 py-4 text-right space-x-1.5 shrink-0">
-                        <button
-                          onClick={() => handleEditClick(cat)}
-                          className="p-1.5 rounded-lg border border-slate-100 hover:bg-primary/5 hover:text-primary text-slate-500 transition-colors cursor-pointer"
-                          title="Edit"
-                        >
-                          <Edit3 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteClick(cat.id)}
-                          className="p-1.5 rounded-lg border border-slate-100 hover:bg-red-50 hover:text-red-500 text-slate-500 transition-colors cursor-pointer"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredCategories.length > 0 ? (
+                    filteredCategories.map((cat) => (
+                      <tr key={cat.id} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="px-5 py-4 font-sans font-bold text-slate-700">{cat.name}</td>
+                        <td className="px-5 py-4 text-slate-500 max-w-[200px] truncate">{cat.description || "-"}</td>
+                        <td className="px-5 py-4 text-slate-500 font-mono text-[11px]">{cat.slug}</td>
+                        <td className="px-5 py-4">
+                          <span className={`px-2 py-0.5 rounded-full border text-[9px] font-bold ${
+                            cat.active 
+                              ? "bg-emerald-50 text-emerald-600 border-emerald-100" 
+                              : "bg-slate-50 text-slate-500 border-slate-100"
+                          }`}>
+                            {cat.active ? "Active" : "Inactive"}
+                          </span>
+                        </td>
+                        <td className="px-5 py-4 text-right space-x-1.5 shrink-0">
+                          <button
+                            onClick={() => handleEditClick(cat)}
+                            className="p-1.5 rounded-lg border border-slate-100 hover:bg-primary/5 hover:text-primary text-slate-500 transition-colors cursor-pointer"
+                            title="Edit"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteClick(cat.id)}
+                            className="p-1.5 rounded-lg border border-slate-100 hover:bg-red-50 hover:text-red-500 text-slate-500 transition-colors cursor-pointer"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={5} className="px-5 py-10 text-center text-slate-400">
+                        No categories found matching your query.
                       </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={4} className="px-5 py-10 text-center text-slate-400">
-                      No categories found matching your query.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
         </section>
 
       </div>

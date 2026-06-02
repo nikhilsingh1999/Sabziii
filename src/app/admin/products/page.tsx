@@ -21,6 +21,8 @@ import {
   DollarSign,
   Package
 } from "lucide-react";
+import { useAdminStore } from "@/store/useAdminStore";
+import { TableSkeleton } from "@/components/Skeletons";
 
 // Product Type matching ProductData in admin-service
 interface Product {
@@ -67,6 +69,7 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const adminStore = useAdminStore();
 
   // Modal Control
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -105,31 +108,19 @@ export default function ProductsPage() {
   const watchImageUrl = watch("imageUrl");
 
   // Fetch initial data
-  const fetchData = async () => {
+  const loadData = async (force = false) => {
     try {
       setLoading(true);
       setError(null);
 
-      // Load products and categories concurrently
-      const [prodRes, catRes] = await Promise.all([
-        fetch("/api/products"),
-        fetch("/api/categories")
+      // Load products and categories concurrently using cache store
+      const [prodData, catData] = await Promise.all([
+        adminStore.fetchProducts(force),
+        adminStore.fetchCategories(force)
       ]);
 
-      const prodData = await prodRes.json();
-      const catData = await catRes.json();
-
-      if (prodRes.ok && prodData.success) {
-        setProducts(prodData.products || []);
-      } else {
-        throw new Error(prodData.error || "Failed to load products");
-      }
-
-      if (catRes.ok && catData.success) {
-        setCategories(catData.categories || []);
-      } else {
-        throw new Error(catData.error || "Failed to load categories");
-      }
+      setProducts(prodData || []);
+      setCategories(catData || []);
     } catch (err: any) {
       console.error("Fetch data error:", err);
       setError(err.message || "Failed to retrieve database entries.");
@@ -139,7 +130,7 @@ export default function ProductsPage() {
   };
 
   useEffect(() => {
-    fetchData();
+    loadData();
   }, []);
 
   // Auto-generate slug from name
@@ -221,7 +212,8 @@ export default function ProductsPage() {
       if (response.ok && data.success) {
         setSuccess(editingProduct ? "Product updated successfully!" : "Product created successfully!");
         setIsModalOpen(false);
-        fetchData();
+        adminStore.invalidateProducts();
+        loadData(true);
       } else {
         setError(data.error || "Failed to save product.");
       }
@@ -249,7 +241,8 @@ export default function ProductsPage() {
 
       if (response.ok && data.success) {
         setSuccess("Product deleted successfully!");
-        fetchData();
+        adminStore.invalidateProducts();
+        loadData(true);
       } else {
         setError(data.error || "Failed to delete product.");
       }
@@ -359,86 +352,72 @@ export default function ProductsPage() {
 
       {/* Products Table Display */}
       <section className="bg-white border border-slate-200/80 rounded-xl p-5 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto border border-slate-100 rounded-lg">
-          <table className="w-full border-collapse text-left text-xs">
-            <thead className="bg-slate-50 text-slate-500 font-bold uppercase border-b border-slate-100">
-              <tr>
-                <th className="px-5 py-3.5">Product Details</th>
-                <th className="px-5 py-3.5">Category</th>
-                <th className="px-5 py-3.5">Price & Unit</th>
-                <th className="px-5 py-3.5">Stock</th>
-                <th className="px-5 py-3.5">Status</th>
-                <th className="px-5 py-3.5 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {loading ? (
+        {loading ? (
+          <TableSkeleton rows={8} cols={6} />
+        ) : (
+          <div className="overflow-x-auto border border-slate-100 rounded-lg">
+            <table className="w-full border-collapse text-left text-xs">
+              <thead className="bg-slate-50 text-slate-500 font-bold uppercase border-b border-slate-100">
                 <tr>
-                  <td colSpan={6} className="px-5 py-12 text-center text-slate-400">
-                    <div className="flex items-center justify-center gap-2">
-                      <Loader2 className="w-5 h-5 text-primary animate-spin" />
-                      <span>Loading products database...</span>
-                    </div>
-                  </td>
+                  <th className="px-5 py-3.5">Product Details</th>
+                  <th className="px-5 py-3.5">Category</th>
+                  <th className="px-5 py-3.5">Price & Unit</th>
+                  <th className="px-5 py-3.5">Stock</th>
+                  <th className="px-5 py-3.5">Status</th>
+                  <th className="px-5 py-3.5 text-right">Actions</th>
                 </tr>
-              ) : filteredProducts.length > 0 ? (
-                filteredProducts.map((prod) => (
-                  <tr key={prod.id} className="hover:bg-slate-50/40 transition-colors">
-                    {/* Details with image */}
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-slate-100 border border-slate-150 rounded-lg overflow-hidden shrink-0 relative flex items-center justify-center">
-                          {prod.imageUrl ? (
-                            /* eslint-disable-next-line @next/next/no-img-element */
-                            <img 
-                              src={prod.imageUrl} 
-                              alt={prod.name} 
-                              className="w-full h-full object-cover" 
-                            />
-                          ) : (
-                            <ImageIcon className="w-5 h-5 text-slate-400" />
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredProducts.length > 0 ? (
+                  filteredProducts.map((prod) => (
+                    <tr key={prod.id} className="hover:bg-slate-50/40 transition-colors">
+                      {/* Details with image */}
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 bg-slate-100 border border-slate-150 rounded-lg overflow-hidden shrink-0 relative flex items-center justify-center">
+                            {prod.imageUrl ? (
+                              /* eslint-disable-next-line @next/next/no-img-element */
+                              <img 
+                                src={prod.imageUrl} 
+                                alt={prod.name} 
+                                className="w-full h-full object-cover" 
+                              />
+                            ) : (
+                              <ImageIcon className="w-5 h-5 text-slate-400" />
+                            )}
+                          </div>
+                          <div className="overflow-hidden">
+                            <h4 className="font-sans font-bold text-slate-700 truncate max-w-[180px] sm:max-w-xs">{prod.name}</h4>
+                            <span className="text-[10px] text-slate-400 font-mono truncate block">{prod.slug}</span>
+                          </div>
+                        </div>
+                      </td>
+                      {/* Category name */}
+                      <td className="px-5 py-3.5 text-slate-600 font-semibold">{prod.categoryName || "Unassigned"}</td>
+                      {/* Price and units */}
+                      <td className="px-5 py-3.5">
+                        <div className="space-y-0.5">
+                          <span className="font-bold text-slate-700">₹{prod.discountPrice || prod.price}</span>
+                          {prod.discountPrice > 0 && prod.discountPrice < prod.price && (
+                            <span className="text-[10px] text-slate-400 line-through ml-1">₹{prod.price}</span>
                           )}
+                          <span className="text-[10px] text-slate-400 block font-medium">per {prod.unit}</span>
                         </div>
-                        <div className="overflow-hidden">
-                          <h4 className="font-sans font-bold text-slate-700 truncate max-w-[180px] sm:max-w-xs">{prod.name}</h4>
-                          <span className="text-[10px] text-slate-400 font-mono truncate block">{prod.slug}</span>
-                        </div>
-                      </div>
-                    </td>
-                    {/* Category name */}
-                    <td className="px-5 py-3.5 text-slate-600 font-semibold">{prod.categoryName || "Unassigned"}</td>
-                    {/* Price and units */}
-                    <td className="px-5 py-3.5">
-                      <div className="space-y-0.5">
-                        <span className="font-bold text-slate-700">₹{prod.discountPrice || prod.price}</span>
-                        {prod.discountPrice > 0 && prod.discountPrice < prod.price && (
-                          <span className="text-[10px] text-slate-400 line-through ml-1">₹{prod.price}</span>
-                        )}
-                        <span className="text-[10px] text-slate-400 font-medium block">per {prod.unit}</span>
-                      </div>
-                    </td>
-                    {/* Stock level */}
-                    <td className="px-5 py-3.5">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                        prod.stock === 0 
-                          ? "bg-red-50 text-red-600 border border-red-100" 
-                          : prod.stock <= 10 
-                          ? "bg-amber-50 text-amber-600 border border-amber-100" 
-                          : "bg-emerald-50 text-emerald-600 border border-emerald-100"
-                      }`}>
-                        {prod.stock} {prod.unit}
-                      </span>
-                    </td>
-                    {/* Status active/inactive */}
-                    <td className="px-5 py-3.5">
-                      <span className={`px-2 py-0.5 rounded-full border text-[9px] font-bold ${
-                        prod.active 
-                          ? "bg-emerald-50 text-emerald-600 border-emerald-100" 
-                          : "bg-slate-50 text-slate-500 border-slate-100"
-                      }`}>
-                        {prod.active ? "Active" : "Inactive"}
-                      </span>
-                    </td>
+                      </td>
+                      {/* Stock */}
+                      <td className="px-5 py-3.5 font-mono font-bold text-slate-600">
+                        {prod.stock} <span className="text-[10px] font-sans font-normal text-slate-400">{prod.unit}</span>
+                      </td>
+                      {/* Status */}
+                      <td className="px-5 py-3.5">
+                        <span className={`px-2 py-0.5 rounded-full border text-[9px] font-bold ${
+                          prod.active 
+                            ? "bg-emerald-50 text-emerald-600 border-emerald-100" 
+                            : "bg-slate-50 text-slate-500 border-slate-100"
+                        }`}>
+                          {prod.active ? "Active" : "Inactive"}
+                        </span>
+                      </td>
                     {/* Action buttons */}
                     <td className="px-5 py-3.5 text-right space-x-1.5">
                       <button
@@ -466,8 +445,9 @@ export default function ProductsPage() {
                 </tr>
               )}
             </tbody>
-          </table>
-        </div>
+            </table>
+          </div>
+        )}
       </section>
 
       {/* Create / Edit Slide-over Modal Dialog */}
