@@ -48,7 +48,7 @@ export default function Contact() {
           Get in Touch
         </span>
         <h1 className="font-sans font-extrabold text-3xl sm:text-4xl text-foreground">
-          Contact FreshPick Support
+          Contact Sabziii Support
         </h1>
         <p className="text-secondary text-sm leading-relaxed">
           Questions about delivery areas, subscription boxes, or interested in farming partnerships? Send us a message!
@@ -82,7 +82,7 @@ export default function Contact() {
                 </div>
                 <div className="text-xs">
                   <h4 className="font-sans font-bold text-foreground">Email Support</h4>
-                  <p className="text-secondary/80 mt-0.5">support@freshpick.com</p>
+                  <p className="text-secondary/80 mt-0.5">support@sabziii.com</p>
                   <p className="text-secondary/60 mt-0.5">Response within 12 business hours</p>
                 </div>
               </li>

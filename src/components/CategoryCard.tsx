@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import { trackEvent } from "@/lib/analytics";
 
 interface CategoryCardProps {
   category: {
@@ -14,20 +15,28 @@ interface CategoryCardProps {
 }
 
 export const CategoryCard: React.FC<CategoryCardProps> = ({ category }) => {
+  const handleCategoryClick = () => {
+    trackEvent("category_click", {
+      category_name: category.name,
+      category_slug: category.slug
+    });
+  };
+
   return (
     <Link 
       href={`/shop?category=${category.slug}`}
-      className="group bg-surface rounded-lg border border-border-color/30 hover:border-primary/30 p-5 flex items-center gap-4 shadow-organic hover:shadow-organic-hover transition-all duration-300"
+      onClick={handleCategoryClick}
+      className="group flex flex-col items-center text-center gap-3.5 p-4 bg-surface rounded-2xl border border-border-color/30 hover:border-primary/40 hover:shadow-organic transition-all duration-300 w-28 shrink-0 sm:w-full"
     >
-      <div className={`w-14 h-14 rounded-full flex items-center justify-center text-3xl ${category.color} shadow-sm group-hover:scale-110 transition-transform duration-300`}>
+      <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center text-2xl sm:text-3xl ${category.color} shadow-sm group-hover:scale-105 group-hover:rotate-3 transition-transform duration-300`}>
         {category.emoji}
       </div>
-      <div>
-        <h3 className="font-sans font-bold text-lg text-foreground group-hover:text-primary transition-colors">
+      <div className="space-y-1">
+        <h3 className="font-sans font-extrabold text-xs sm:text-sm text-foreground group-hover:text-primary transition-colors line-clamp-1">
           {category.name}
         </h3>
-        <p className="text-xs text-secondary/70 font-medium">
-          {category.count} Products Available
+        <p className="text-[9px] sm:text-xs text-secondary/60 font-bold uppercase tracking-wider">
+          {category.count} Items
         </p>
       </div>
     </Link>

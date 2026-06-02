@@ -40,7 +40,7 @@ export const Newsletter = () => {
             <div className="bg-white/80 dark:bg-surface/80 border border-emerald-500/20 rounded-md p-4 flex items-start gap-3 shadow-sm animate-fade-in">
               <CheckCircle2 className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
               <div>
-                <h4 className="font-sans font-bold text-sm text-foreground">Welcome to the FreshPick Family!</h4>
+                <h4 className="font-sans font-bold text-sm text-foreground">Welcome to the Sabziii Family!</h4>
                 <p className="text-xs text-secondary mt-0.5">Please check your inbox. Your 15% discount code has been sent!</p>
               </div>
             </div>

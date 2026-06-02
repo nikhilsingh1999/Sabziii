@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useApp } from "@/context/AppContext";
+import { useStore } from "@/store/useStore";
 import { 
   ShoppingBag, 
   CheckCircle, 
@@ -14,11 +15,13 @@ import {
   Phone, 
   MapPin, 
   Calendar,
-  IndianRupee
+  IndianRupee,
+  AlertCircle
 } from "lucide-react";
 
 export default function Checkout() {
-  const { cart, placeOrder } = useApp();
+  const { cart, placeOrder, addresses } = useApp();
+  const user = useStore((state) => state.user);
 
   // Form states
   const [fullName, setFullName] = useState("");
@@ -28,15 +31,21 @@ export default function Checkout() {
   const [phone, setPhone] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cod");
 
+  useEffect(() => {
+    if (user) {
+      if (user.name) setFullName(user.name);
+      if (user.phone) setPhone(user.phone);
+    }
+  }, [user]);
+
   // Flow control states
   const [placedOrder, setPlacedOrder] = useState<any>(null);
   const [errors, setErrors] = useState<any>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const subtotal = cart.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
-  const tax = subtotal * 0.05;
-  const delivery = subtotal > 299 ? 0 : 40;
-  const total = subtotal + tax + delivery;
+  const delivery = subtotal >= 300 ? 0 : 19;
+  const total = subtotal + delivery;
 
   const validate = () => {
     const newErrors: any = {};
@@ -49,21 +58,25 @@ export default function Checkout() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handlePlaceOrderSubmit = (e: React.FormEvent) => {
+  const handlePlaceOrderSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
 
     setIsSubmitting(true);
+    setErrors({});
 
-    // Simulate API call
-    setTimeout(() => {
-      const orderDetails = placeOrder(
+    try {
+      const orderDetails = await placeOrder(
         { fullName, address, city, zipCode, phone },
-        paymentMethod === "cod" ? "Cash on Delivery" : paymentMethod === "upi" ? "UPI (GPay/PhonePe)" : "Credit/Debit Card"
+        paymentMethod
       );
       setPlacedOrder(orderDetails);
+    } catch (err: any) {
+      console.error(err);
+      setErrors({ submit: err.message || "Failed to place order. Please try again." });
+    } finally {
       setIsSubmitting(false);
-    }, 1500);
+    }
   };
 
   // If order was placed, render Order Confirmed Screen
@@ -80,7 +93,7 @@ export default function Checkout() {
         <div className="space-y-2">
           <h1 className="font-sans font-extrabold text-3xl text-foreground">Order Confirmed!</h1>
           <p className="text-secondary text-sm">
-            Thank you for shopping with FreshPick. Your order has been sent to our local farms!
+            Thank you for shopping with Sabziii. Your order has been sent to our local farms!
           </p>
         </div>
 
@@ -206,11 +219,46 @@ export default function Checkout() {
         <form onSubmit={handlePlaceOrderSubmit} className="lg:col-span-8 space-y-6">
           
           {/* Shipping details */}
-          <div className="bg-surface p-6 border border-border-color/30 rounded-lg shadow-organic space-y-4">
+          <div className="bg-surface p-6 border border-border-color/30 rounded-lg shadow-organic space-y-4 text-left">
             <h2 className="font-sans font-extrabold text-base text-foreground flex items-center gap-2 border-b border-border-color/20 pb-3">
               <Truck className="w-4 h-4 text-primary" />
               <span>1. Delivery Address</span>
             </h2>
+
+            {addresses && addresses.length > 0 && (
+              <div className="space-y-2 pb-2 border-b border-border-color/10">
+                <span className="text-[10px] font-bold text-secondary uppercase tracking-wider block">
+                  Quick Select Saved Address
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {addresses.map((addr: any) => (
+                    <div
+                      key={addr.id}
+                      onClick={() => {
+                        setFullName(addr.name || "");
+                        setAddress(addr.address || "");
+                        setCity(addr.city || "");
+                        setZipCode(addr.zip || "");
+                        setPhone(addr.phone || "");
+                      }}
+                      className="border border-border-color/30 hover:border-primary/50 cursor-pointer rounded-lg p-3 bg-surface-hover/20 hover:bg-surface-hover/40 transition-all text-xs space-y-1.5"
+                    >
+                      <div className="flex justify-between items-center">
+                        <span className="font-extrabold text-[9px] uppercase text-primary bg-primary/10 px-2 py-0.5 rounded">
+                          {addr.type || "Address"}
+                        </span>
+                      </div>
+                      <div>
+                        <h4 className="font-sans font-bold text-foreground">{addr.name}</h4>
+                        <p className="text-secondary/80 line-clamp-1">{addr.address}</p>
+                        <p className="text-secondary/80">{addr.city} - {addr.zip}</p>
+                        <p className="text-secondary/80 font-semibold mt-1">Phone: {addr.phone}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Full Name */}
@@ -405,15 +453,11 @@ export default function Checkout() {
               ))}
             </div>
 
-            {/* Summary figures */}
+             {/* Summary figures */}
             <div className="border-t border-border-color/20 pt-4 space-y-2.5 text-xs">
               <div className="flex justify-between text-secondary">
                 <span>Subtotal</span>
                 <span className="font-semibold text-foreground">₹{subtotal}</span>
-              </div>
-              <div className="flex justify-between text-secondary">
-                <span>Estimated VAT (5%)</span>
-                <span className="font-semibold text-foreground">₹{tax.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-secondary">
                 <span>Delivery charges</span>
@@ -427,15 +471,37 @@ export default function Checkout() {
               </div>
             </div>
 
+            {errors.submit && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-2.5 flex items-start gap-2 text-[11px] text-red-600 animate-fade-in">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span className="font-semibold leading-normal">{errors.submit}</span>
+              </div>
+            )}
+
             {/* Submit Button */}
-            <button
-              onClick={handlePlaceOrderSubmit}
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full py-3.5 rounded-full bg-primary text-white text-sm font-bold flex items-center justify-center gap-2 shadow-md hover:bg-primary-container/90 hover:scale-105 active:scale-95 transition-all duration-300 disabled:opacity-75"
-            >
-              <span>{isSubmitting ? "Processing Order..." : "Confirm & Place Order"}</span>
-            </button>
+            {subtotal < 200 ? (
+              <div className="space-y-3">
+                <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-950/30 text-red-600 dark:text-red-400 p-3 rounded-lg text-[10px] font-semibold text-center">
+                  ⚠️ Minimum order value of <b>₹200</b> is required.
+                </div>
+                <button
+                  type="button"
+                  disabled
+                  className="w-full py-3.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 text-sm font-bold flex items-center justify-center gap-2 cursor-not-allowed"
+                >
+                  <span>Confirm & Place Order</span>
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={handlePlaceOrderSubmit}
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full py-3.5 rounded-full bg-primary text-white text-sm font-bold flex items-center justify-center gap-2 shadow-md hover:bg-primary-container/90 hover:scale-105 active:scale-95 transition-all duration-300 disabled:opacity-75"
+              >
+                <span>{isSubmitting ? "Processing Order..." : "Confirm & Place Order"}</span>
+              </button>
+            )}
           </div>
         </div>
 

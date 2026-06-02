@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState, use } from "react";
+import React, { useState, use, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useApp } from "@/context/AppContext";
 import { ProductCard } from "@/components/ProductCard";
+import { trackEvent } from "@/lib/analytics";
 import { 
   ArrowLeft, 
   Heart, 
@@ -23,13 +24,24 @@ interface PageProps {
 
 export default function ProductDetail({ params }: PageProps) {
   const resolvedParams = use(params);
-  const productId = parseInt(resolvedParams.id);
+  const productId = resolvedParams.id;
   
   const { products, cart, addToCart, updateQuantity, toggleWishlist, isInWishlist } = useApp();
   const [activeTab, setActiveTab] = useState<"description" | "nutritional" | "reviews">("description");
 
   // Find product
-  const product = products.find((p) => p.id === productId);
+  const product = products.find((p) => String(p.id) === String(productId));
+
+  useEffect(() => {
+    if (product) {
+      trackEvent("product_viewed", {
+        product_id: String(product.id),
+        product_name: product.name,
+        price: product.price,
+        category: product.category
+      });
+    }
+  }, [product]);
 
   if (!product) {
     return (
@@ -91,7 +103,7 @@ export default function ProductDetail({ params }: PageProps) {
               fill
               sizes="(max-width: 768px) 100vw, 500px"
               priority
-              className="object-contain p-8 transition-transform duration-500 ease-out hover:scale-110 hover:rotate-3"
+              className="object-contain transition-transform duration-500 ease-out hover:scale-110 hover:rotate-3"
             />
             <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent pointer-events-none" />
           </div>

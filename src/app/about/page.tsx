@@ -44,7 +44,7 @@ export default function About() {
           Sowing the Seeds of Clean Eating
         </h1>
         <p className="text-secondary text-sm sm:text-base leading-relaxed">
-          At FreshPick, we believe that healthy lives start with healthy soils. We bridge the gap between small local farms and your kitchen table.
+          At Sabziii, we believe that healthy lives start with healthy soils. We bridge the gap between small local farms and your kitchen table.
         </p>
       </section>
 
@@ -120,7 +120,7 @@ export default function About() {
             Our Farm Stewards
           </h2>
           <p className="text-secondary text-sm">
-            Meet the researchers, logistics planners, and culinarians powering the FreshPick loop.
+            Meet the researchers, logistics planners, and culinarians powering the Sabziii loop.
           </p>
         </div>
 

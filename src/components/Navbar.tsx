@@ -2,18 +2,20 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useApp } from "@/context/AppContext";
-import { 
-  ShoppingBag, 
-  Heart, 
-  User, 
-  Search, 
-  Menu, 
-  X, 
-  Sun, 
-  Moon, 
-  Leaf 
+import { trackEvent } from "@/lib/analytics";
+import {
+  ShoppingBag,
+  Heart,
+  User,
+  Search,
+  Menu,
+  X,
+  Sun,
+  Moon,
+  Leaf
 } from "lucide-react";
 
 export const Navbar = () => {
@@ -29,6 +31,7 @@ export const Navbar = () => {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
+      trackEvent("search_product", { query: searchQuery.trim() });
       router.push(`/shop?search=${encodeURIComponent(searchQuery.trim())}`);
       setIsOpen(false);
     }
@@ -51,12 +54,15 @@ export const Navbar = () => {
             {/* Logo */}
             <div className="flex-shrink-0 flex items-center">
               <Link href="/" className="flex items-center gap-2 group">
-                <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white transition-transform group-hover:scale-110">
-                  <Leaf className="w-5 h-5" />
+                <div className="relative h-10 w-28 sm:h-12 sm:w-36 transition-transform group-hover:scale-105">
+                  <Image
+                    src="/images/logo.png"
+                    alt="Sabziii Logo"
+                    fill
+                    priority
+                    className="object-contain"
+                  />
                 </div>
-                <span className="font-sans font-extrabold text-2xl tracking-tight text-primary">
-                  Fresh<span className="text-tertiary">Pick</span>
-                </span>
               </Link>
             </div>
 
@@ -68,11 +74,10 @@ export const Navbar = () => {
                   <Link
                     key={link.name}
                     href={link.href}
-                    className={`font-sans text-sm font-semibold transition-colors duration-200 hover:text-primary ${
-                      isActive 
-                        ? "text-primary border-b-2 border-primary pb-1" 
-                        : "text-secondary hover:text-primary"
-                    }`}
+                    className={`font-sans text-sm font-semibold transition-colors duration-200 hover:text-primary ${isActive
+                      ? "text-primary border-b-2 border-primary pb-1"
+                      : "text-secondary hover:text-primary"
+                      }`}
                   >
                     {link.name}
                   </Link>
@@ -203,11 +208,10 @@ export const Navbar = () => {
                       key={link.name}
                       href={link.href}
                       onClick={() => setIsOpen(false)}
-                      className={`px-3 py-2 text-base font-semibold rounded-md transition-colors ${
-                        isActive 
-                          ? "bg-primary/10 text-primary" 
-                          : "text-secondary hover:bg-surface-hover hover:text-primary"
-                      }`}
+                      className={`px-3 py-2 text-base font-semibold rounded-md transition-colors ${isActive
+                        ? "bg-primary/10 text-primary"
+                        : "text-secondary hover:bg-surface-hover hover:text-primary"
+                        }`}
                     >
                       {link.name}
                     </Link>

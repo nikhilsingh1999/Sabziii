@@ -86,7 +86,7 @@ export default function BlogArticle({ params }: PageProps) {
               Fresh thoughts on clean living.
             </h3>
             <p className="text-white/80 text-xs">
-              FreshPick is dedicated to supporting your organic lifestyle.
+              Sabziii is dedicated to supporting your organic lifestyle.
             </p>
           </div>
           <span className="text-8xl select-none animate-pulse">🥗</span>

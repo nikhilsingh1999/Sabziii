@@ -21,7 +21,7 @@ export default function Blog() {
       {/* Title */}
       <div>
         <h1 className="font-sans font-extrabold text-2xl sm:text-3xl text-foreground">
-          FreshPick Organic Blog
+          Sabziii Organic Blog
         </h1>
         <p className="text-secondary text-sm">
           Healthy recipes, organic nutrition science, and smart kitchen storage tips.

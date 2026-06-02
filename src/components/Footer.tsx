@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Leaf, Phone, Mail, MapPin, Heart } from "lucide-react";
 
 export const Footer = () => {
@@ -13,12 +14,14 @@ export const Footer = () => {
           {/* Logo and About Brand */}
           <div className="lg:col-span-2">
             <Link href="/" className="flex items-center gap-2 group mb-5">
-              <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white transition-transform group-hover:scale-105">
-                <Leaf className="w-4.5 h-4.5" />
+              <div className="relative h-8 w-24 sm:h-10 sm:w-30 transition-transform group-hover:scale-105">
+                <Image
+                  src="/images/logo.png"
+                  alt="Sabziii Logo"
+                  fill
+                  className="object-contain"
+                />
               </div>
-              <span className="font-sans font-extrabold text-xl tracking-tight text-primary">
-                Fresh<span className="text-tertiary">Pick</span>
-              </span>
             </Link>
             <p className="text-secondary text-sm leading-relaxed mb-6 max-w-sm">
               We connect urban families with local, sustainable farms, delivering nutrient-rich organic produce straight to your kitchen. Taste the fresh difference.
@@ -43,7 +46,7 @@ export const Footer = () => {
             </h4>
             <ul className="space-y-3">
               {[
-                { name: "About FreshPick", href: "/about" },
+                { name: "About Sabziii", href: "/about" },
                 { name: "Browse Products", href: "/shop" },
                 { name: "Special Offers", href: "/shop?filter=sale" },
                 { name: "Latest Blog", href: "/blog" },
@@ -102,7 +105,7 @@ export const Footer = () => {
               </li>
               <li className="flex gap-3 text-secondary text-sm">
                 <Mail className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-                <span>support@freshpick.com</span>
+                <span>support@sabziii.com</span>
               </li>
             </ul>
           </div>
@@ -112,7 +115,7 @@ export const Footer = () => {
         {/* Bottom Bar: Copyright and payment types */}
         <div className="border-t border-border-color/20 mt-12 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-secondary/80 text-xs text-center md:text-left flex items-center gap-1">
-            <span>&copy; {new Date().getFullYear()} FreshPick. All rights reserved. Made with</span>
+            <span>&copy; {new Date().getFullYear()} Sabziii. All rights reserved. Made with</span>
             <Heart className="w-3 h-3 text-red-500 fill-current" />
             <span>for healthy dining.</span>
           </p>

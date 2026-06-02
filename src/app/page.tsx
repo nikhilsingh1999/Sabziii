@@ -7,6 +7,7 @@ import { useApp } from "@/context/AppContext";
 import { CategoryCard } from "@/components/CategoryCard";
 import { ProductCard } from "@/components/ProductCard";
 import { Newsletter } from "@/components/Newsletter";
+import { HeroCarousel } from "@/components/HeroCarousel";
 import { 
   ArrowRight, 
   Truck, 
@@ -18,11 +19,13 @@ import {
 export default function Home() {
   const { products, categories } = useApp();
 
-  // Get featured products (isPopular: true)
+  // Get featured products (isPopular: true, with fallback to first 4 active products)
   const featuredProducts = products.filter((p) => p.isPopular).slice(0, 4);
+  const displayFeatured = featuredProducts.length > 0 ? featuredProducts : products.slice(0, 4);
 
-  // Get seasonal products (isSeasonal: true)
+  // Get seasonal products (isSeasonal: true, with fallback to next 4 active products)
   const seasonalProducts = products.filter((p) => p.isSeasonal).slice(0, 4);
+  const displaySeasonal = seasonalProducts.length > 0 ? seasonalProducts : products.slice(4, 8);
 
   const testimonials = [
     {
@@ -38,7 +41,7 @@ export default function Home() {
       name: "Arjun Mehta",
       role: "Fitness Coach",
       rating: 5,
-      comment: "Finding fresh purple asparagus and dragon fruit in the city used to be a hassle. FreshPick exotic range is fresh and reasonably priced. Strongly recommend!",
+      comment: "Finding fresh purple asparagus and dragon fruit in the city used to be a hassle. Sabziii exotic range is fresh and reasonably priced. Strongly recommend!",
       avatar: "A"
     },
     {
@@ -54,63 +57,8 @@ export default function Home() {
   return (
     <div className="space-y-16 pb-12">
       
-      {/* Hero Section */}
-      <section className="grid lg:grid-cols-12 gap-8 items-center bg-primary/5 dark:bg-primary-container/5 rounded-xl border border-primary/10 p-6 sm:p-10 lg:p-12 overflow-hidden relative shadow-organic">
-        <div className="lg:col-span-7 z-10 space-y-6">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-primary/10 text-primary dark:text-primary-container font-sans text-xs font-bold rounded-full uppercase tracking-wider border border-primary/20">
-            🌱 100% Organic & Farm Fresh
-          </span>
-          <h1 className="font-sans font-extrabold text-3xl sm:text-4xl lg:text-5xl leading-tight text-foreground">
-            Taste the Fresh Difference — Farm to Table in <span className="text-primary">Hours</span>
-          </h1>
-          <p className="text-secondary text-base sm:text-lg leading-relaxed max-w-xl">
-            Sustainably grown fruits and vegetables by local organic farms, delivered straight to your doorstep. Experience nutrient-rich produce that stays fresh longer.
-          </p>
-          <div className="flex flex-wrap gap-4 pt-2">
-            <Link 
-              href="/shop" 
-              className="px-6 py-3.5 rounded-full bg-primary text-white text-sm font-bold flex items-center gap-2 shadow-md hover:bg-primary-container/90 hover:scale-105 active:scale-95 transition-all duration-300"
-            >
-              <span>Shop Fresh Now</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-            <Link 
-              href="/categories" 
-              className="px-6 py-3.5 rounded-full bg-surface text-foreground hover:bg-surface-hover text-sm font-bold flex items-center gap-2 shadow-sm border border-border-color/30 hover:scale-105 active:scale-95 transition-all duration-300"
-            >
-              <span>Browse Categories</span>
-            </Link>
-          </div>
-          {/* Quick Metrics */}
-          <div className="grid grid-cols-3 gap-4 pt-6 border-t border-border-color/20 max-w-md">
-            <div>
-              <p className="text-2xl font-extrabold text-primary">25+</p>
-              <p className="text-xs text-secondary font-medium">Local Farms</p>
-            </div>
-            <div>
-              <p className="text-2xl font-extrabold text-primary">100%</p>
-              <p className="text-xs text-secondary font-medium">Pesticide Free</p>
-            </div>
-            <div>
-              <p className="text-2xl font-extrabold text-primary">&lt; 3 Hr</p>
-              <p className="text-xs text-secondary font-medium">Express Delivery</p>
-            </div>
-          </div>
-        </div>
-        
-        {/* Hero Image */}
-        <div className="lg:col-span-5 relative w-full h-72 sm:h-96 lg:h-full min-h-[300px] flex items-center justify-center">
-          <div className="relative w-full h-full rounded-lg overflow-hidden shadow-organic border border-border-color/10">
-            <Image
-              src="/images/fresh_produce_hero.png"
-              alt="Vibrant heap of fresh organic produce"
-              fill
-              priority
-              className="object-cover transition-transform duration-700 hover:scale-105"
-            />
-          </div>
-        </div>
-      </section>
+      {/* Hero Carousel Section */}
+      <HeroCarousel />
 
       {/* Categories Section */}
       <section className="space-y-6">
@@ -132,7 +80,7 @@ export default function Home() {
           </Link>
         </div>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="flex sm:grid overflow-x-auto sm:overflow-visible pb-4 sm:pb-0 gap-4 sm:grid-cols-2 lg:grid-cols-4 sm:gap-6 scrollbar-thin">
           {categories.map((category) => (
             <CategoryCard key={category.slug} category={category} />
           ))}
@@ -160,7 +108,7 @@ export default function Home() {
         </div>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {featuredProducts.map((product) => (
+          {displayFeatured.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
         </div>
@@ -225,7 +173,7 @@ export default function Home() {
         </div>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {seasonalProducts.map((product) => (
+          {displaySeasonal.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
         </div>

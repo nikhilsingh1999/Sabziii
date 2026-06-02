@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useApp, Product } from "@/context/AppContext";
 import { Plus, Minus, Heart, Star, ShoppingBag } from "lucide-react";
+import { trackEvent } from "@/lib/analytics";
 
 interface ProductCardProps {
   product: Product;
@@ -39,6 +40,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     toggleWishlist(product.id);
   };
 
+  const handleProductClick = () => {
+    trackEvent("product_clicked", {
+      product_id: String(product.id),
+      product_name: product.name,
+      price: product.price,
+      category: product.category
+    });
+  };
+
   return (
     <div className="group bg-surface rounded-lg overflow-hidden border border-border-color/30 hover:border-primary/40 shadow-organic hover:shadow-organic-hover transition-all duration-300 flex flex-col h-full relative">
       
@@ -66,7 +76,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       </button>
 
       {/* Product Link wrapper */}
-      <Link href={`/product/${product.id}`} className="block flex-grow">
+      <Link href={`/product/${product.id}`} onClick={handleProductClick} className="block flex-grow">
         {/* Product Image Container using Next/Image */}
         <div className={`aspect-square w-full ${product.color} relative overflow-hidden transition-all duration-300 flex items-center justify-center`}>
           <Image
@@ -74,7 +84,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             alt={product.name}
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            className="object-contain p-6 transition-transform duration-500 ease-out group-hover:scale-110"
+            className="object-contain transition-transform duration-500 ease-out group-hover:scale-110"
           />
           {/* Subtle Glow Overlay */}
           <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent pointer-events-none" />

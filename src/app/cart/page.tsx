@@ -4,20 +4,22 @@ import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useApp } from "@/context/AppContext";
+import { useStore } from "@/store/useStore";
 import { Plus, Minus, Trash2, ShoppingBag, ArrowRight, ShieldCheck } from "lucide-react";
+import { trackEvent } from "@/lib/analytics";
 
 export default function Cart() {
   const { cart, updateQuantity, removeFromCart, clearCart } = useApp();
+  const user = useStore((state) => state.user);
   const [promoCode, setPromoCode] = useState("");
   const [promoApplied, setPromoApplied] = useState(false);
   const [promoError, setPromoError] = useState("");
 
   const subtotal = cart.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
   const discount = promoApplied ? subtotal * 0.15 : 0; // 15% discount
-  const remainingForFreeDelivery = 299 - subtotal;
-  const deliveryCharges = subtotal === 0 ? 0 : (subtotal - discount) > 299 ? 0 : 40;
-  const tax = (subtotal - discount) * 0.05; // 5% VAT
-  const total = subtotal - discount + deliveryCharges + tax;
+  const remainingForFreeDelivery = 300 - subtotal;
+  const deliveryCharges = subtotal === 0 ? 0 : (subtotal >= 300 ? 0 : 19);
+  const total = subtotal - discount + deliveryCharges;
 
   const handleApplyPromo = (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,7 +103,7 @@ export default function Cart() {
                         alt={item.product.name}
                         fill
                         sizes="56px"
-                        className="object-contain p-2"
+                        className="object-contain "
                       />
                     </div>
                     <div className="space-y-1">
@@ -124,23 +126,29 @@ export default function Cart() {
 
                   {/* Quantity Stepper Column */}
                   <div className="col-span-4 sm:col-span-2 flex sm:justify-center items-center border-t border-border-color/10 sm:border-t-0 pt-2 sm:pt-0">
-                    <div className="flex items-center bg-primary-container text-white h-8 rounded-full overflow-hidden border border-primary/20 mx-auto">
-                      <button
-                        onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                        className="h-full px-2.5 text-white hover:bg-primary/20 flex items-center justify-center transition-colors"
-                      >
-                        <Minus className="w-3 h-3" />
-                      </button>
-                      <span className="px-1.5 font-sans font-extrabold text-xs min-w-[16px] text-center select-none text-white">
-                        {item.quantity}
+                    {String(item.product.id) === "freebie-dhaniya-mirch" ? (
+                      <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full mx-auto select-none">
+                        Freebie
                       </span>
-                      <button
-                        onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                        className="h-full px-2.5 text-white hover:bg-primary/20 flex items-center justify-center transition-colors"
-                      >
-                        <Plus className="w-3 h-3" />
-                      </button>
-                    </div>
+                    ) : (
+                      <div className="flex items-center bg-primary-container text-white h-8 rounded-full overflow-hidden border border-primary/20 mx-auto">
+                        <button
+                          onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                          className="h-full px-2.5 text-white hover:bg-primary/20 flex items-center justify-center transition-colors"
+                        >
+                          <Minus className="w-3 h-3" />
+                        </button>
+                        <span className="px-1.5 font-sans font-extrabold text-xs min-w-[16px] text-center select-none text-white">
+                          {item.quantity}
+                        </span>
+                        <button
+                          onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                          className="h-full px-2.5 text-white hover:bg-primary/20 flex items-center justify-center transition-colors"
+                        >
+                          <Plus className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   {/* Subtotal & Delete Column */}
@@ -150,13 +158,15 @@ export default function Cart() {
                       <span className="text-sm font-bold text-foreground">
                         ₹{item.product.price * item.quantity}
                       </span>
-                      <button
-                        onClick={() => removeFromCart(item.product.id)}
-                        className="text-secondary/60 hover:text-red-500 p-1.5 rounded-full hover:bg-red-500/10 transition-colors"
-                        aria-label="Remove item"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {String(item.product.id) !== "freebie-dhaniya-mirch" && (
+                        <button
+                          onClick={() => removeFromCart(item.product.id)}
+                          className="text-secondary/60 hover:text-red-500 p-1.5 rounded-full hover:bg-red-500/10 transition-colors"
+                          aria-label="Remove item"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                   </div>
 
@@ -212,11 +222,6 @@ export default function Cart() {
                 </span>
               </div>
 
-              <div className="flex justify-between text-secondary">
-                <span>Estimated VAT (5%)</span>
-                <span className="font-semibold text-foreground">₹{tax.toFixed(2)}</span>
-              </div>
-
               <div className="border-t border-border-color/20 pt-4 flex justify-between text-base font-extrabold text-foreground">
                 <span>Grand Total</span>
                 <span className="text-primary text-xl font-black">₹{total.toFixed(2)}</span>
@@ -260,13 +265,44 @@ export default function Cart() {
               {promoError && <p className="text-[10px] text-red-500 font-bold">{promoError}</p>}
             </form>
 
-            <Link
-              href="/checkout"
-              className="w-full py-3.5 rounded-full bg-primary text-white text-sm font-bold flex items-center justify-center gap-2 shadow-md hover:bg-primary-container/90 hover:scale-105 active:scale-95 transition-all duration-300"
-            >
-              <span>Proceed to Checkout</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
+            {!user ? (
+              <div className="space-y-3 text-center">
+                <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-950/30 text-black dark:text-black-200 p-3 rounded-lg text-xs font-semibold">
+                  🔑 Please sign in to proceed to checkout.
+                </div>
+                <Link
+                  href="/login?redirect=checkout"
+                  onClick={() => trackEvent("begin_checkout", { authenticated: false, items_count: cart.length, subtotal })}
+                  className="w-full py-3.5 rounded-full bg-primary text-white text-sm font-bold flex items-center justify-center gap-2 shadow-md hover:bg-primary-container/90 hover:scale-105 active:scale-95 transition-all duration-300"
+                >
+                  <span>Sign In to Checkout</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+            ) : subtotal < 200 ? (
+              <div className="space-y-3 text-center">
+                <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-950/30 text-red-600 dark:text-red-400 p-3 rounded-lg text-xs font-semibold">
+                  ⚠️ Minimum order value of <b>₹200</b> is required.
+                </div>
+                <button
+                  type="button"
+                  disabled
+                  className="w-full py-3.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 text-sm font-bold flex items-center justify-center gap-2 cursor-not-allowed"
+                >
+                  <span>Proceed to Checkout</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <Link
+                href="/checkout"
+                onClick={() => trackEvent("begin_checkout", { authenticated: true, items_count: cart.length, subtotal })}
+                className="w-full py-3.5 rounded-full bg-primary text-white text-sm font-bold flex items-center justify-center gap-2 shadow-md hover:bg-primary-container/90 hover:scale-105 active:scale-95 transition-all duration-300"
+              >
+                <span>Proceed to Checkout</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            )}
 
             <div className="flex items-center gap-2.5 justify-center text-xs text-secondary/70 pt-2 border-t border-border-color/10">
               <ShieldCheck className="w-4 h-4 text-emerald-500" />
