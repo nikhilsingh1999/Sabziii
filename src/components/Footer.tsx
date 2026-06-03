@@ -1,11 +1,13 @@
 "use client";
 
-import React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Leaf, Phone, Mail, MapPin, Heart } from "lucide-react";
+import {  Phone, Mail, MapPin, Heart } from "lucide-react";
+import { useApp } from "@/context/AppContext";
 
 export const Footer = () => {
+  const { categories } = useApp();
+  const displayedCategories = categories.slice(0, 4);
   return (
     <footer className="bg-surface border-t border-border-color/30 pt-16 pb-8 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -70,22 +72,24 @@ export const Footer = () => {
               Product Categories
             </h4>
             <ul className="space-y-3">
-              {[
-                { name: "Leafy Greens", href: "/shop?category=leafy-greens" },
-                { name: "Fresh Vegetables", href: "/shop?category=vegetables" },
-                { name: "Sweet Fruits", href: "/shop?category=fruits" },
-                { name: "Exotic Produce", href: "/shop?category=exotics" },
-                { name: "Browse All", href: "/categories" },
-              ].map((item) => (
-                <li key={item.name}>
+              {displayedCategories.map((cat) => (
+                <li key={cat.slug}>
                   <Link 
-                    href={item.href} 
+                    href={`/shop?category=${cat.slug}`} 
                     className="text-secondary hover:text-primary text-sm font-medium transition-colors"
                   >
-                    {item.name}
+                    {cat.name}
                   </Link>
                 </li>
               ))}
+              <li>
+                <Link 
+                  href="/categories" 
+                  className="text-secondary hover:text-primary text-sm font-bold transition-colors"
+                >
+                  Browse All
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -97,11 +101,11 @@ export const Footer = () => {
             <ul className="space-y-4">
               <li className="flex gap-3 text-secondary text-sm">
                 <MapPin className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-                <span>12 Organic Farm Road, Green Valley, IND</span>
+                <span>Bhopal, Madhya Pradesh, India</span>
               </li>
               <li className="flex gap-3 text-secondary text-sm">
                 <Phone className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-                <span>+91 98765 43210</span>
+                <span>+91 9131753246</span>
               </li>
               <li className="flex gap-3 text-secondary text-sm">
                 <Mail className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
@@ -114,11 +118,21 @@ export const Footer = () => {
 
         {/* Bottom Bar: Copyright and payment types */}
         <div className="border-t border-border-color/20 mt-12 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-secondary/80 text-xs text-center md:text-left flex items-center gap-1">
-            <span>&copy; {new Date().getFullYear()} Sabziii. All rights reserved. Made with</span>
-            <Heart className="w-3 h-3 text-red-500 fill-current" />
-            <span>for healthy dining.</span>
-          </p>
+          <div className="text-secondary/80 text-xs text-center md:text-left space-y-1">
+            <p className="flex items-center justify-center md:justify-start gap-1">
+              <span>&copy; {new Date().getFullYear()} Sabziii. All rights reserved. Made with</span>
+              <Heart className="w-3 h-3 text-red-500 fill-current" />
+              <span>for healthy dining.</span>
+            </p>
+            <p className="text-secondary/60">
+              Created and managed by <span className="font-bold text-primary">Bytebuster Tech</span> 
+            </p>
+            <p className="flex justify-center md:justify-start gap-3 mt-1.5 text-secondary/50">
+              <Link href="/terms" className="hover:text-primary transition-colors">Terms & Conditions</Link>
+              <span>•</span>
+              <Link href="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link>
+            </p>
+          </div>
 
           <div className="flex items-center gap-2">
             {["Visa", "MasterCard", "UPI", "Rupay", "COD"].map((pay) => (

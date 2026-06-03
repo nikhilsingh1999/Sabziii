@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Mail, Phone, MapPin, Clock, Send, CheckCircle2 } from "lucide-react";
+import { Mail, Phone, MapPin, Clock, Send, CheckCircle2, ShieldCheck } from "lucide-react";
 
 export default function Contact() {
   // Form states
@@ -70,9 +70,9 @@ export default function Contact() {
                   <Phone className="w-4 h-4" />
                 </div>
                 <div className="text-xs">
-                  <h4 className="font-sans font-bold text-foreground">Customer Care</h4>
-                  <p className="text-secondary/80 mt-0.5">+91 98765 43210</p>
-                  <p className="text-secondary/60 mt-0.5">Toll-free line for immediate assistance</p>
+                  <h4 className="font-sans font-bold text-foreground">Customer Care (Nikhil Singh)</h4>
+                  <p className="text-secondary/80 mt-0.5">+91 9131753246</p>
+                  <p className="text-secondary/60 mt-0.5">Contact for orders and immediate assistance</p>
                 </div>
               </li>
 
@@ -84,6 +84,17 @@ export default function Contact() {
                   <h4 className="font-sans font-bold text-foreground">Email Support</h4>
                   <p className="text-secondary/80 mt-0.5">support@sabziii.com</p>
                   <p className="text-secondary/60 mt-0.5">Response within 12 business hours</p>
+                </div>
+              </li>
+
+              <li className="flex gap-3.5 items-start">
+                <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+                  <ShieldCheck className="w-4 h-4" />
+                </div>
+                <div className="text-xs">
+                  <h4 className="font-sans font-bold text-foreground">Platform Operator</h4>
+                  <p className="text-secondary/80 mt-0.5">Bytebuster Tech</p>
+                  <p className="text-secondary/60 mt-0.5">Created and managed by Bytebuster Tech</p>
                 </div>
               </li>
 

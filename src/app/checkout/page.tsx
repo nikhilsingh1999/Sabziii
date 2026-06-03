@@ -364,7 +364,7 @@ export default function Checkout() {
               <span>2. Payment Option</span>
             </h2>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               
               {/* Cash On Delivery */}
               <label 
@@ -406,27 +406,6 @@ export default function Checkout() {
                 <Wallet className="w-6 h-6" />
                 <span className="font-sans font-bold text-xs">UPI (Google Pay/PhonePe)</span>
                 <span className="text-[10px] opacity-80">Instant verification</span>
-              </label>
-
-              {/* Card */}
-              <label 
-                className={`p-4 rounded-lg border-2 flex flex-col gap-2 items-center text-center cursor-pointer transition-all duration-200 ${
-                  paymentMethod === "card" 
-                    ? "border-primary bg-primary/5 text-primary" 
-                    : "border-border-color/40 bg-surface hover:bg-surface-hover text-secondary"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="payment"
-                  value="card"
-                  checked={paymentMethod === "card"}
-                  onChange={() => setPaymentMethod("card")}
-                  className="sr-only"
-                />
-                <CreditCard className="w-6 h-6" />
-                <span className="font-sans font-bold text-xs">Credit / Debit Card</span>
-                <span className="text-[10px] opacity-80">Secure Checkout</span>
               </label>
 
             </div>

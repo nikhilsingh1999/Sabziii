@@ -27,9 +27,9 @@ export default function About() {
   ];
 
   const team = [
-    { name: "Dr. Anil Sharma", role: "Founder & Agricultural Scientist", desc: "A passionate botanist with 15+ years researching organic soil restoration.", avatar: "AS" },
-    { name: "Kriti Sen", role: "Co-Founder & Head of Operations", desc: "Logistics whiz focused on keeping our sunrise-harvest delivery loop under 3 hours.", avatar: "KS" },
-    { name: "Chef Marcus Lin", role: "Head Culinary Curator", desc: "Food enthusiast designing healthy organic meal kits and recipes.", avatar: "ML" }
+    { name: "Nikhil Singh", role: "Owner & Administrator", desc: "Manages store operations, customer services, and coordinates farm-to-table deliveries.", avatar: "NS" },
+    { name: "Bytebuster Tech", role: "Platform Creator & Manager", desc: "Designed, developed, and manages the technology suite driving Sabzii catalog and orders.", avatar: "BT" },
+    { name: "Dr. Anil Sharma", role: "Agricultural Advisor", desc: "A passionate botanist with 15+ years researching organic soil restoration and farming.", avatar: "AS" }
   ];
 
   return (
