@@ -68,6 +68,7 @@ export interface Category {
   emoji?: string;
   color?: string;
   count?: number;
+  imageUrl?: string;
 }
 
 export interface CartItem {
@@ -526,6 +527,7 @@ export const useStore = create<StoreState>()(
                 active: true,
                 emoji: preset.emoji,
                 color: preset.color,
+                imageUrl: c.imageUrl || "",
                 count: activeProducts.filter((p: any) => p.categorySlug === c.slug).length
               };
             });

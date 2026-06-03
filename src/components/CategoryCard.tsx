@@ -11,6 +11,7 @@ interface CategoryCardProps {
     count: number;
     emoji: string;
     color: string;
+    imageUrl?: string;
   };
 }
 
@@ -28,8 +29,13 @@ export const CategoryCard: React.FC<CategoryCardProps> = ({ category }) => {
       onClick={handleCategoryClick}
       className="group flex flex-col items-center text-center gap-3.5 p-4 bg-surface rounded-2xl border border-border-color/30 hover:border-primary/40 hover:shadow-organic transition-all duration-300 w-28 shrink-0 sm:w-full"
     >
-      <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center text-2xl sm:text-3xl ${category.color} shadow-sm group-hover:scale-105 group-hover:rotate-3 transition-transform duration-300`}>
-        {category.emoji}
+      <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center text-2xl sm:text-3xl ${category.color} shadow-sm group-hover:scale-105 group-hover:rotate-3 transition-transform duration-300 overflow-hidden`}>
+        {category.imageUrl ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img src={category.imageUrl} alt={category.name} className="w-full h-full object-cover" />
+        ) : (
+          category.emoji
+        )}
       </div>
       <div className="space-y-1">
         <h3 className="font-sans font-extrabold text-xs sm:text-sm text-foreground group-hover:text-primary transition-colors line-clamp-1">

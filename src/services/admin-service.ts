@@ -8,6 +8,7 @@ export interface CategoryData {
   slug: string;
   description?: string;
   active: boolean;
+  imageUrl?: string;
   createdAt?: admin.firestore.Timestamp;
   updatedAt?: admin.firestore.Timestamp;
 }

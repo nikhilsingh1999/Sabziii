@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, slug, active, description } = body;
+    const { name, slug, active, description, imageUrl } = body;
 
     if (!name || !slug) {
       return NextResponse.json({ success: false, error: "Name and Slug are required" }, { status: 400 });
@@ -35,7 +35,8 @@ export async function POST(request: Request) {
       name, 
       slug, 
       active: active !== false,
-      description: description || ""
+      description: description || "",
+      imageUrl: imageUrl || ""
     });
     
     return NextResponse.json({ success: true, categoryId });
@@ -53,7 +54,7 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json();
-    const { id, name, slug, active, description } = body;
+    const { id, name, slug, active, description, imageUrl } = body;
 
     if (!id) {
       return NextResponse.json({ success: false, error: "Category ID (id) is required" }, { status: 400 });
@@ -64,6 +65,7 @@ export async function PUT(request: Request) {
     if (slug !== undefined) updates.slug = slug;
     if (active !== undefined) updates.active = active;
     if (description !== undefined) updates.description = description;
+    if (imageUrl !== undefined) updates.imageUrl = imageUrl;
 
     await updateCategory(id, updates);
     return NextResponse.json({ success: true, message: "Category updated successfully" });

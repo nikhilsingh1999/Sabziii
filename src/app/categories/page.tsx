@@ -59,8 +59,13 @@ export default function Categories() {
               <div className="space-y-4">
                 {/* Icon & Title */}
                 <div className="flex items-center gap-4">
-                  <div className={`w-16 h-16 rounded-full flex items-center justify-center text-4xl ${category.color} shadow-inner group-hover:scale-105 transition-transform duration-300`}>
-                    {category.emoji}
+                  <div className={`w-16 h-16 rounded-full flex items-center justify-center text-4xl ${category.color} shadow-inner group-hover:scale-105 transition-transform duration-300 overflow-hidden`}>
+                    {category.imageUrl ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img src={category.imageUrl} alt={category.name} className="w-full h-full object-cover" />
+                    ) : (
+                      category.emoji
+                    )}
                   </div>
                   <div>
                     <h2 className="font-sans font-extrabold text-xl text-foreground group-hover:text-primary transition-colors">

@@ -10,8 +10,10 @@ import {
   Loader2, 
   AlertCircle,
   X,
-  CheckCircle2
+  CheckCircle2,
+  ImageIcon
 } from "lucide-react";
+import { CldUploadWidget } from "next-cloudinary";
 import { useAdminStore } from "@/store/useAdminStore";
 import { TableSkeleton } from "@/components/Skeletons";
 
@@ -21,7 +23,16 @@ interface Category {
   slug: string;
   description?: string;
   active: boolean;
+  imageUrl?: string;
 }
+
+// Preset mapping for emojis
+const categoryPresets: Record<string, string> = {
+  "leafy-greens": "🥬",
+  "vegetables": "🥦",
+  "fruits": "🍓",
+  "exotics": "✨"
+};
 
 export default function Categories() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -35,6 +46,7 @@ export default function Categories() {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
   const [active, setActive] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
@@ -77,6 +89,7 @@ export default function Categories() {
     setName(cat.name);
     setSlug(cat.slug);
     setDescription(cat.description || "");
+    setImageUrl(cat.imageUrl || "");
     setActive(cat.active);
     setError(null);
     setSuccess(null);
@@ -87,6 +100,7 @@ export default function Categories() {
     setName("");
     setSlug("");
     setDescription("");
+    setImageUrl("");
     setActive(true);
   };
 
@@ -105,8 +119,8 @@ export default function Categories() {
       const url = "/api/categories";
       const method = editingId ? "PUT" : "POST";
       const payload = editingId 
-        ? { id: editingId, name, slug, active, description }
-        : { name, slug, active, description };
+        ? { id: editingId, name, slug, active, description, imageUrl }
+        : { name, slug, active, description, imageUrl };
 
       const response = await fetch(url, {
         method,
@@ -247,6 +261,64 @@ export default function Categories() {
               />
             </div>
 
+            {/* Category Image */}
+            <div className="space-y-2">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
+                Category Image (Optional)
+              </span>
+              
+              <div className="flex gap-4 items-center">
+                {/* Preview Thumbnail */}
+                <div className="w-16 h-16 bg-white border border-slate-200 rounded-lg overflow-hidden flex items-center justify-center shrink-0 relative">
+                  {imageUrl ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img 
+                      src={imageUrl} 
+                      alt="Category preview" 
+                      className="w-full h-full object-cover" 
+                    />
+                  ) : (
+                    <ImageIcon className="w-6 h-6 text-slate-300" />
+                  )}
+                </div>
+
+                {/* Cloudinary Upload Trigger */}
+                <div className="space-y-1 text-left flex-grow">
+                  <CldUploadWidget
+                    uploadPreset="products"
+                    onSuccess={(result: any) => {
+                      if (result.info && typeof result.info === "object" && "secure_url" in result.info) {
+                        setImageUrl(result.info.secure_url);
+                      }
+                    }}
+                  >
+                    {({ open }) => (
+                      <button
+                        type="button"
+                        onClick={() => open()}
+                        className="px-3 py-1.5 rounded-full border border-slate-300 hover:border-primary hover:text-primary bg-white text-[10px] font-extrabold flex items-center gap-1 transition-all shadow-sm cursor-pointer"
+                      >
+                        <ImageIcon className="w-3.5 h-3.5 text-slate-500" />
+                        <span>Upload Image</span>
+                      </button>
+                    )}
+                  </CldUploadWidget>
+                </div>
+              </div>
+
+              {/* Manual URL fallback */}
+              <div className="space-y-1">
+                <input
+                  type="text"
+                  placeholder="Or paste direct image URL here..."
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  disabled={submitting}
+                  className="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-primary bg-white"
+                />
+              </div>
+            </div>
+
             {/* Status (Active Checkbox) */}
             <div className="flex items-center gap-2 py-1.5">
               <input
@@ -322,38 +394,53 @@ export default function Categories() {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {filteredCategories.length > 0 ? (
-                    filteredCategories.map((cat) => (
-                      <tr key={cat.id} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="px-5 py-4 font-sans font-bold text-slate-700">{cat.name}</td>
-                        <td className="px-5 py-4 text-slate-500 max-w-[200px] truncate">{cat.description || "-"}</td>
-                        <td className="px-5 py-4 text-slate-500 font-mono text-[11px]">{cat.slug}</td>
-                        <td className="px-5 py-4">
-                          <span className={`px-2 py-0.5 rounded-full border text-[9px] font-bold ${
-                            cat.active 
-                              ? "bg-emerald-50 text-emerald-600 border-emerald-100" 
-                              : "bg-slate-50 text-slate-500 border-slate-100"
-                          }`}>
-                            {cat.active ? "Active" : "Inactive"}
-                          </span>
-                        </td>
-                        <td className="px-5 py-4 text-right space-x-1.5 shrink-0">
-                          <button
-                            onClick={() => handleEditClick(cat)}
-                            className="p-1.5 rounded-lg border border-slate-100 hover:bg-primary/5 hover:text-primary text-slate-500 transition-colors cursor-pointer"
-                            title="Edit"
-                          >
-                            <Edit3 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteClick(cat.id)}
-                            className="p-1.5 rounded-lg border border-slate-100 hover:bg-red-50 hover:text-red-500 text-slate-500 transition-colors cursor-pointer"
-                            title="Delete"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))
+                    filteredCategories.map((cat) => {
+                      const presetEmoji = categoryPresets[cat.slug] || "🥗";
+                      return (
+                        <tr key={cat.id} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="px-5 py-4 font-sans font-bold text-slate-700">
+                            <div className="flex items-center gap-3 text-left">
+                              <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden shrink-0 border border-slate-200">
+                                {cat.imageUrl ? (
+                                  /* eslint-disable-next-line @next/next/no-img-element */
+                                  <img src={cat.imageUrl} alt={cat.name} className="w-full h-full object-cover" />
+                                ) : (
+                                  <span className="text-lg">{presetEmoji}</span>
+                                )}
+                              </div>
+                              <span>{cat.name}</span>
+                            </div>
+                          </td>
+                          <td className="px-5 py-4 text-slate-500 max-w-[200px] truncate">{cat.description || "-"}</td>
+                          <td className="px-5 py-4 text-slate-500 font-mono text-[11px]">{cat.slug}</td>
+                          <td className="px-5 py-4">
+                            <span className={`px-2 py-0.5 rounded-full border text-[9px] font-bold ${
+                              cat.active 
+                                ? "bg-emerald-50 text-emerald-600 border-emerald-100" 
+                                : "bg-slate-50 text-slate-500 border-slate-100"
+                            }`}>
+                              {cat.active ? "Active" : "Inactive"}
+                            </span>
+                          </td>
+                          <td className="px-5 py-4 text-right space-x-1.5 shrink-0">
+                            <button
+                              onClick={() => handleEditClick(cat)}
+                              className="p-1.5 rounded-lg border border-slate-100 hover:bg-primary/5 hover:text-primary text-slate-500 transition-colors cursor-pointer"
+                              title="Edit"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteClick(cat.id)}
+                              className="p-1.5 rounded-lg border border-slate-100 hover:bg-red-50 hover:text-red-500 text-slate-500 transition-colors cursor-pointer"
+                              title="Delete"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
                   ) : (
                     <tr>
                       <td colSpan={5} className="px-5 py-10 text-center text-slate-400">

@@ -23,6 +23,7 @@ export interface Category {
   slug: string;
   description?: string;
   active: boolean;
+  imageUrl?: string;
 }
 
 export interface Customer {

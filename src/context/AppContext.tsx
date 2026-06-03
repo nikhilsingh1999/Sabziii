@@ -25,7 +25,7 @@ export interface BlogArticle {
 
 interface AppContextType {
   products: Product[];
-  categories: { name: string; slug: string; count: number; emoji: string; color: string }[];
+  categories: { name: string; slug: string; count: number; emoji: string; color: string; imageUrl?: string }[];
   blogArticles: BlogArticle[];
   cart: CartItem[];
   wishlist: any[];
